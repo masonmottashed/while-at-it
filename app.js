@@ -1,7 +1,8 @@
 (function () {
   'use strict';
 
-  const STORAGE_KEY = 'rightwindow-state-v1';
+  const STORAGE_KEY = 'whileatit-state-v1';
+  const LEGACY_STORAGE_KEY = 'rightwindow-state-v1';
   const icons = { Errand: '↗', Call: '☎', Home: '⌂', Money: '$', School: '✎', Health: '+', Other: '•' };
   const placeLabels = { anywhere: 'Anywhere', home: 'At home', nearby: 'Nearby', specific: 'Specific place' };
   const deadlineLabels = { today: 'Due today', tomorrow: 'Due tomorrow', week: 'Due this week', later: 'Due later', none: 'No deadline' };
@@ -14,7 +15,17 @@
 
   function defaultState() { return { minutes: 20, tasks: sampleTasks(), completions: [], activeView: 'now', filter: 'open' }; }
   function loadState() {
-    try { const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)); return saved && Array.isArray(saved.tasks) ? { ...defaultState(), ...saved } : defaultState(); }
+    try {
+      const current = localStorage.getItem(STORAGE_KEY);
+      const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+      const saved = JSON.parse(current || legacy);
+      if (saved && Array.isArray(saved.tasks)) {
+        const migrated = { ...defaultState(), ...saved };
+        if (!current && legacy) localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+        return migrated;
+      }
+      return defaultState();
+    }
     catch (_) { return defaultState(); }
   }
   let state = loadState();
@@ -48,7 +59,7 @@
     if (task.place === 'nearby') reasons.push('it can be handled as a nearby stop');
     if (task.importance === 'high') reasons.push('you marked it high priority');
     const sentence = reasons.length > 1 ? `${reasons.slice(0,-1).join(', ')}, and ${reasons.at(-1)}` : reasons[0];
-    return `RightWindow picked this because ${sentence || 'it is the strongest fit for this window'}.`;
+    return `WhileAtIt picked this because ${sentence || 'it is the strongest fit for this window'}.`;
   }
 
   function renderRecommendation() {
@@ -82,7 +93,7 @@
     if (state.filter === 'open') tasks = tasks.filter(t => t.status === 'open');
     if (state.filter === 'done') tasks = tasks.filter(t => t.status === 'done');
     tasks.sort((a,b) => (a.status === b.status ? scoreTask(b, 999) - scoreTask(a, 999) : a.status === 'open' ? -1 : 1));
-    if (!tasks.length) { list.innerHTML = `<div class="empty-card"><div class="empty-icon">○</div><h2>Nothing here yet.</h2><p>${state.filter === 'done' ? 'Completed loops will collect here.' : 'Add a task and RightWindow will find the best time for it.'}</p></div>`; return; }
+    if (!tasks.length) { list.innerHTML = `<div class="empty-card"><div class="empty-icon">○</div><h2>Nothing here yet.</h2><p>${state.filter === 'done' ? 'Completed loops will collect here.' : 'Add a task and WhileAtIt will find the best time for it.'}</p></div>`; return; }
     list.innerHTML = tasks.map(task => `<article class="loop-row ${task.status === 'done' ? 'is-done' : ''}">
       <button class="loop-check" data-toggle="${task.id}" aria-label="${task.status === 'done' ? 'Reopen' : 'Complete'} ${escapeHtml(task.title)}">${task.status === 'done' ? '✓' : ''}</button>
       <div class="loop-content"><h3>${escapeHtml(task.title)}</h3><p>${escapeHtml(task.category)} · ${task.duration} min · ${escapeHtml(deadlineLabels[task.deadline])} · ${escapeHtml(placeLabels[task.place])}</p></div>
@@ -111,7 +122,7 @@
       const byCategory = {}; completed.forEach(t => byCategory[t.category] = (byCategory[t.category] || 0) + 1);
       const top = Object.entries(byCategory).sort((a,b) => b[1]-a[1])[0];
       $('#insightTitle').textContent = `${top[0]} tasks are your easiest wins.`;
-      $('#insightCopy').textContent = `You’ve finished ${top[1]} ${top[0].toLowerCase()} loop${top[1] === 1 ? '' : 's'}. RightWindow will keep looking for small, well-timed chances to build on that momentum.`;
+      $('#insightCopy').textContent = `You’ve finished ${top[1]} ${top[0].toLowerCase()} loop${top[1] === 1 ? '' : 's'}. WhileAtIt will keep looking for small, well-timed chances to build on that momentum.`;
     }
   }
 
@@ -176,9 +187,9 @@
   function registerWebMCP() {
     const context = document.modelContext; if (!context?.registerTool) return;
     const addTool = (tool) => { try { void Promise.resolve(context.registerTool(tool)).catch(() => {}); } catch (_) {} };
-    addTool({ name:'get_rightwindow_recommendation', title:'Get RightWindow recommendation', description:'Return the best open loop for the currently selected time window without changing app state.', inputSchema:{type:'object',properties:{},additionalProperties:false}, annotations:{readOnlyHint:true,untrustedContentHint:false}, execute(){ const task=rankedOpen()[0]; return task ? {id:task.id,title:task.title,fit_score:task.score,duration_minutes:task.duration,reason:reasonFor(task)} : {recommendation:null}; } });
+    addTool({ name:'get_whileatit_recommendation', title:'Get WhileAtIt recommendation', description:'Return the best open loop for the currently selected time window without changing app state.', inputSchema:{type:'object',properties:{},additionalProperties:false}, annotations:{readOnlyHint:true,untrustedContentHint:false}, execute(){ const task=rankedOpen()[0]; return task ? {id:task.id,title:task.title,fit_score:task.score,duration_minutes:task.duration,reason:reasonFor(task)} : {recommendation:null}; } });
     addTool({ name:'set_available_minutes', title:'Set available time', description:'Change the available time window and refresh the visible recommendation.', inputSchema:{type:'object',properties:{minutes:{type:'integer',minimum:5,maximum:480}},required:['minutes'],additionalProperties:false}, annotations:{readOnlyHint:false,untrustedContentHint:false}, execute(input){ if(!Number.isInteger(input?.minutes)||input.minutes<5||input.minutes>480) throw new Error('Minutes must be an integer from 5 to 480.'); state.minutes=input.minutes; renderAll(); return {available_minutes:state.minutes,recommendation:rankedOpen()[0]?.title||null}; } });
-    addTool({ name:'add_open_loop', title:'Add open loop', description:'Create a new task in RightWindow and update the visible recommendations.', inputSchema:{type:'object',properties:{title:{type:'string',minLength:1,maxLength:80},duration_minutes:{type:'integer',minimum:5,maximum:480},deadline:{type:'string',enum:['today','tomorrow','week','later','none']},importance:{type:'string',enum:['high','medium','low']},place:{type:'string',enum:['anywhere','home','nearby','specific']},category:{type:'string',enum:['Errand','Call','Home','Money','School','Health','Other']},note:{type:'string',maxLength:120}},required:['title','duration_minutes','deadline','importance','place','category'],additionalProperties:false}, annotations:{readOnlyHint:false,untrustedContentHint:false}, execute(input){ if(!input?.title?.trim()||!Number.isInteger(input.duration_minutes)) throw new Error('Valid title and duration_minutes are required.'); const task={id:crypto.randomUUID(),title:input.title.trim(),duration:input.duration_minutes,deadline:input.deadline,importance:input.importance,place:input.place,category:input.category,note:(input.note||'').trim(),status:'open',createdAt:Date.now()}; state.tasks.unshift(task); renderAll(); return {created:true,id:task.id,title:task.title}; } });
+    addTool({ name:'add_open_loop', title:'Add open loop', description:'Create a new task in WhileAtIt and update the visible recommendations.', inputSchema:{type:'object',properties:{title:{type:'string',minLength:1,maxLength:80},duration_minutes:{type:'integer',minimum:5,maximum:480},deadline:{type:'string',enum:['today','tomorrow','week','later','none']},importance:{type:'string',enum:['high','medium','low']},place:{type:'string',enum:['anywhere','home','nearby','specific']},category:{type:'string',enum:['Errand','Call','Home','Money','School','Health','Other']},note:{type:'string',maxLength:120}},required:['title','duration_minutes','deadline','importance','place','category'],additionalProperties:false}, annotations:{readOnlyHint:false,untrustedContentHint:false}, execute(input){ if(!input?.title?.trim()||!Number.isInteger(input.duration_minutes)) throw new Error('Valid title and duration_minutes are required.'); const task={id:crypto.randomUUID(),title:input.title.trim(),duration:input.duration_minutes,deadline:input.deadline,importance:input.importance,place:input.place,category:input.category,note:(input.note||'').trim(),status:'open',createdAt:Date.now()}; state.tasks.unshift(task); renderAll(); return {created:true,id:task.id,title:task.title}; } });
     addTool({ name:'complete_open_loop', title:'Complete open loop', description:'Mark an existing open loop complete and update momentum.', inputSchema:{type:'object',properties:{id:{type:'string'}},required:['id'],additionalProperties:false}, annotations:{readOnlyHint:false,untrustedContentHint:false}, execute(input){ const task=state.tasks.find(t=>t.id===input?.id&&t.status==='open'); if(!task) throw new Error('Open loop not found.'); completeTask(task.id); return {completed:true,id:task.id,title:task.title}; } });
   }
 
