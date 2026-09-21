@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#111b2e" />
+  <meta name="description" content="RightWindow finds the best moment to finish the things hanging over you." />
+  <title>RightWindow</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23111b2e'/%3E%3Cpath d='M13 18h38v28H13z' fill='none' stroke='%23ffca67' stroke-width='5'/%3E%3Cpath d='M32 18v28M13 32h38' stroke='%23ffca67' stroke-width='4'/%3E%3Ccircle cx='42' cy='25' r='5' fill='%237dd9c5'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <button class="brand" data-view-link="now" aria-label="Go to Right Now">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span>RightWindow</span>
+      </button>
+      <button class="icon-button" id="openSettings" aria-label="Open settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.09A1.7 1.7 0 0 0 8.55 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.2 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H2.4v-4h.09A1.7 1.7 0 0 0 4.2 8.55a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 8.55 4.2a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V2.4h4v.09A1.7 1.7 0 0 0 15 4.2a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 8.55c.4.23.73.58.94 1 .12.26.18.54.18.83v.05h.09v4h-.09a1.7 1.7 0 0 0-1.12.57Z"/></svg>
+      </button>
+    </header>
+
+    <main>
+      <section class="view is-active" id="view-now" data-view="now">
+        <div class="welcome-row">
+          <div>
+            <p class="eyebrow" id="todayLabel">YOUR NEXT WIN</p>
+            <h1>What fits <em>right now?</em></h1>
+          </div>
+          <button class="add-button" id="openAdd"><span aria-hidden="true">+</span> Add loop</button>
+        </div>
+
+        <section class="time-panel" aria-labelledby="timeHeading">
+          <div class="time-copy">
+            <span class="clock-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+            </span>
+            <div><h2 id="timeHeading">How much time do you have?</h2><p>We’ll only show tasks that truly fit.</p></div>
+          </div>
+          <div class="time-options" role="group" aria-label="Available time">
+            <button data-minutes="10">10m</button>
+            <button data-minutes="20" class="is-selected">20m</button>
+            <button data-minutes="30">30m</button>
+            <button data-minutes="60">1h</button>
+            <button data-minutes="120">Free</button>
+          </div>
+        </section>
+
+        <section id="recommendationArea" aria-live="polite"></section>
+
+        <section class="other-section" id="otherSection">
+          <div class="section-heading">
+            <div><p class="eyebrow">ALSO POSSIBLE</p><h2>Other good windows</h2></div>
+            <button class="text-button" data-view-link="loops">See all</button>
+          </div>
+          <div class="other-list" id="otherList"></div>
+        </section>
+
+        <section class="progress-card" id="progressCard">
+          <div class="progress-copy">
+            <span class="spark" aria-hidden="true">✦</span>
+            <div><strong id="progressHeadline">You’re clearing the clutter.</strong><p id="progressText">Finish one loop and your day gets lighter.</p></div>
+          </div>
+          <div class="week-count"><strong id="completedCount">0</strong><span>done<br/>this week</span></div>
+        </section>
+      </section>
+
+      <section class="view" id="view-loops" data-view="loops">
+        <div class="page-title-row">
+          <div><p class="eyebrow">YOUR OPEN LOOPS</p><h1>Everything waiting<br/><em>for a window.</em></h1></div>
+          <button class="add-button" id="openAddFromLoops"><span aria-hidden="true">+</span> Add loop</button>
+        </div>
+        <div class="filter-row" role="group" aria-label="Filter open loops">
+          <button class="is-selected" data-filter="open">Open</button>
+          <button data-filter="done">Completed</button>
+          <button data-filter="all">All</button>
+        </div>
+        <div class="loops-list" id="loopsList"></div>
+      </section>
+
+      <section class="view" id="view-insights" data-view="insights">
+        <div class="page-title-row single">
+          <div><p class="eyebrow">YOUR MOMENTUM</p><h1>Small windows.<br/><em>Real progress.</em></h1></div>
+        </div>
+        <div class="stats-grid">
+          <article><span>Closed loops</span><strong id="statCompleted">0</strong><small>all time</small></article>
+          <article><span>Time reclaimed</span><strong id="statMinutes">0m</strong><small>estimated</small></article>
+          <article><span>Current streak</span><strong id="statStreak">0</strong><small>days</small></article>
+        </div>
+        <section class="insight-card">
+          <p class="eyebrow">WHAT WORKS FOR YOU</p>
+          <h2 id="insightTitle">Your pattern will show up here.</h2>
+          <p id="insightCopy">Complete a few open loops and RightWindow will start noticing which kinds of tasks you finish most often.</p>
+        </section>
+        <section class="category-card">
+          <div class="section-heading"><div><p class="eyebrow">OPEN BY CATEGORY</p><h2>Where things are waiting</h2></div></div>
+          <div id="categoryBars"></div>
+        </section>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Primary navigation">
+      <button class="is-active" data-view-link="now"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3.5 11 8.5-7 8.5 7"/><path d="M5.5 10v9.5h13V10M9.5 19.5v-6h5v6"/></svg><span>Right now</span></button>
+      <button data-view-link="loops"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8 12 2.2 2.2L16.5 8"/></svg><span>Open loops</span></button>
+      <button data-view-link="insights"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg><span>Momentum</span></button>
+    </nav>
+  </div>
+
+  <dialog id="addDialog" class="sheet-dialog">
+    <form method="dialog" id="taskForm">
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <div class="dialog-heading"><div><p class="eyebrow">NEW OPEN LOOP</p><h2>What’s hanging over you?</h2></div><button class="icon-button close-button" value="cancel" aria-label="Close">×</button></div>
+      <label class="field"><span>Task</span><input id="taskTitle" name="title" maxlength="80" required placeholder="Return Amazon package" /></label>
+      <div class="field-grid">
+        <label class="field"><span>Time needed</span><select id="taskDuration" name="duration"><option value="5">5 minutes</option><option value="10">10 minutes</option><option value="15" selected>15 minutes</option><option value="20">20 minutes</option><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60">1 hour</option><option value="90">1.5 hours</option></select></label>
+        <label class="field"><span>Due</span><select id="taskDeadline" name="deadline"><option value="today">Today</option><option value="tomorrow" selected>Tomorrow</option><option value="week">This week</option><option value="later">Later</option><option value="none">No deadline</option></select></label>
+      </div>
+      <div class="field-grid">
+        <label class="field"><span>Importance</span><select id="taskImportance" name="importance"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></label>
+        <label class="field"><span>Where</span><select id="taskPlace" name="place"><option value="anywhere">Anywhere</option><option value="home">At home</option><option value="nearby">Nearby stop</option><option value="specific">Specific place</option></select></label>
+      </div>
+      <label class="field"><span>Category</span><select id="taskCategory" name="category"><option value="Errand">Errand</option><option value="Call">Call</option><option value="Home">Home</option><option value="Money">Money</option><option value="School">School</option><option value="Health">Health</option><option value="Other">Other</option></select></label>
+      <label class="field"><span>Optional note</span><input id="taskNote" name="note" maxlength="120" placeholder="QR code is in my email" /></label>
+      <button class="primary-button full" value="default" type="submit">Add open loop <span aria-hidden="true">→</span></button>
+    </form>
+  </dialog>
+
+  <dialog id="settingsDialog" class="sheet-dialog compact">
+    <form method="dialog">
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <div class="dialog-heading"><div><p class="eyebrow">SETTINGS</p><h2>Your RightWindow</h2></div><button class="icon-button close-button" value="cancel" aria-label="Close">×</button></div>
+      <div class="setting-row"><div><strong>Sample tasks</strong><p>Add the starter examples back.</p></div><button type="button" class="outline-button" id="resetSamples">Restore</button></div>
+      <div class="setting-row"><div><strong>Clear all data</strong><p>Remove tasks and momentum from this device.</p></div><button type="button" class="outline-button danger" id="clearData">Clear</button></div>
+      <p class="privacy-note"><span aria-hidden="true">⌁</span> This MVP stores your information only in this browser.</p>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="./app.js"></script>
+</body>
+</html>
